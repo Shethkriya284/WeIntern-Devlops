@@ -1,0 +1,399 @@
+import java.util.*;
+import java.io.*;
+
+/**
+ * Student Grade Management System
+ * A console-based application for teachers to manage student grades
+ */
+public class StudentGradeManagementSystem {
+    private HashMap<String, Double> studentGrades;
+    private Scanner scanner;
+    
+    public StudentGradeManagementSystem() {
+        studentGrades = new HashMap<>();
+        scanner = new Scanner(System.in);
+    }
+    
+    public static void main(String[] args) {
+        StudentGradeManagementSystem system = new StudentGradeManagementSystem();
+        system.run();
+    }
+    
+    public void run() {
+        System.out.println("=== Student Grade Management System ===");
+        System.out.println("Welcome Teacher!");
+        
+        while (true) {
+            displayMenu();
+            int choice = getChoice();
+            
+            switch (choice) {
+                case 1:
+                    addStudent();
+                    break;
+                case 2:
+                    updateGrade();
+                    break;
+                case 3:
+                    viewAllStudents();
+                    break;
+                case 4:
+                    searchStudent();
+                    break;
+                case 5:
+                    generateReport();
+                    break;
+                case 6:
+                    sortStudentsByGrade();
+                    break;
+                case 7:
+                    removeStudent();
+                    break;
+                case 8:
+                    saveToFile();
+                    break;
+                case 9:
+                    loadFromFile();
+                    break;
+                case 10:
+                    System.out.println("Thank you for using Student Grade Management System!");
+                    return;
+                default:
+                    System.out.println("Invalid choice! Please try again.");
+            }
+        }
+    }
+    
+    private void displayMenu() {
+        System.out.println("\n=== MENU ===");
+        System.out.println("1. Add Student");
+        System.out.println("2. Update Grade");
+        System.out.println("3. View All Students");
+        System.out.println("4. Search Student");
+        System.out.println("5. Generate Report");
+        System.out.println("6. Sort Students by Grade");
+        System.out.println("7. Remove Student");
+        System.out.println("8. Save to File");
+        System.out.println("9. Load from File");
+        System.out.println("10. Exit");
+        System.out.print("Enter your choice: ");
+    }
+    
+    private int getChoice() {
+        try {
+            return scanner.nextInt();
+        } catch (InputMismatchException e) {
+            scanner.nextLine(); // Clear invalid input
+            return -1;
+        }
+    }
+    
+    private void addStudent() {
+        scanner.nextLine(); // Clear buffer
+        System.out.print("Enter student name: ");
+        String name = scanner.nextLine().trim();
+        
+        if (name.isEmpty()) {
+            System.out.println("Student name cannot be empty!");
+            return;
+        }
+        
+        if (studentGrades.containsKey(name)) {
+            System.out.println("Student already exists! Use 'Update Grade' option instead.");
+            return;
+        }
+        
+        System.out.print("Enter grade (0-100): ");
+        try {
+            double grade = scanner.nextDouble();
+            if (grade < 0 || grade > 100) {
+                System.out.println("Grade must be between 0 and 100!");
+                return;
+            }
+            
+            studentGrades.put(name, grade);
+            System.out.println("Student '" + name + "' added successfully with grade: " + grade);
+        } catch (InputMismatchException e) {
+            scanner.nextLine(); // Clear invalid input
+            System.out.println("Invalid grade format! Please enter a number.");
+        }
+    }
+    
+    private void updateGrade() {
+        if (studentGrades.isEmpty()) {
+            System.out.println("No students found! Add students first.");
+            return;
+        }
+        
+        scanner.nextLine(); // Clear buffer
+        System.out.print("Enter student name to update: ");
+        String name = scanner.nextLine().trim();
+        
+        if (!studentGrades.containsKey(name)) {
+            System.out.println("Student not found!");
+            return;
+        }
+        
+        System.out.println("Current grade for " + name + ": " + studentGrades.get(name));
+        System.out.print("Enter new grade (0-100): ");
+        
+        try {
+            double newGrade = scanner.nextDouble();
+            if (newGrade < 0 || newGrade > 100) {
+                System.out.println("Grade must be between 0 and 100!");
+                return;
+            }
+            
+            studentGrades.put(name, newGrade);
+            System.out.println("Grade updated successfully for " + name + ": " + newGrade);
+        } catch (InputMismatchException e) {
+            scanner.nextLine(); // Clear invalid input
+            System.out.println("Invalid grade format! Please enter a number.");
+        }
+    }
+    
+    private void viewAllStudents() {
+        if (studentGrades.isEmpty()) {
+            System.out.println("No students found!");
+            return;
+        }
+        
+        System.out.println("\n=== ALL STUDENTS ===");
+        System.out.printf("%-20s %s%n", "Student Name", "Grade");
+        System.out.println("--------------------------------");
+        
+        for (Map.Entry<String, Double> entry : studentGrades.entrySet()) {
+            double grade = entry.getValue();
+            String gradeDisplay = Math.round(grade * 100.0) / 100.0 + " (" + getLetterGrade(grade) + ")";
+            System.out.println(entry.getKey() + " - " + gradeDisplay);
+        }
+        System.out.println("Total Students: " + studentGrades.size());
+    }
+    
+    private void searchStudent() {
+        if (studentGrades.isEmpty()) {
+            System.out.println("No students found!");
+            return;
+        }
+        
+        scanner.nextLine(); // Clear buffer
+        System.out.print("Enter student name to search: ");
+        String name = scanner.nextLine().trim();
+        
+        if (studentGrades.containsKey(name)) {
+            double grade = studentGrades.get(name);
+            System.out.println("\n=== STUDENT FOUND ===");
+            System.out.println("Name: " + name);
+            System.out.println("Grade: " + grade);
+            System.out.println("Letter Grade: " + getLetterGrade(grade));
+            System.out.println("Status: " + (grade >= 60 ? "PASS" : "FAIL"));
+        } else {
+            System.out.println("Student not found!");
+        }
+    }
+    
+    private void generateReport() {
+        if (studentGrades.isEmpty()) {
+            System.out.println("No students found!");
+            return;
+        }
+        
+        System.out.println("\n=== GRADE REPORT ===");
+        
+        // Calculate statistics
+        double total = 0;
+        double highest = Double.MIN_VALUE;
+        double lowest = Double.MAX_VALUE;
+        String topStudent = "";
+        String bottomStudent = "";
+        int passCount = 0;
+        int failCount = 0;
+        
+        for (Map.Entry<String, Double> entry : studentGrades.entrySet()) {
+            double grade = entry.getValue();
+            total += grade;
+            
+            if (grade > highest) {
+                highest = grade;
+                topStudent = entry.getKey();
+            }
+            
+            if (grade < lowest) {
+                lowest = grade;
+                bottomStudent = entry.getKey();
+            }
+            
+            if (grade >= 60) {
+                passCount++;
+            } else {
+                failCount++;
+            }
+        }
+        
+        double average = total / studentGrades.size();
+        
+        System.out.println("Total Students: " + studentGrades.size());
+        double roundedAverage = Math.round(average * 100.0) / 100.0;
+        System.out.println("Average Grade: " + roundedAverage + " (" + getLetterGrade(average) + ")");
+        double roundedHighest = Math.round(highest * 100.0) / 100.0;
+        System.out.println("Highest Grade: " + roundedHighest + " (" + getLetterGrade(highest) + ") - " + topStudent);
+        double roundedLowest = Math.round(lowest * 100.0) / 100.0;
+        System.out.println("Lowest Grade: " + roundedLowest + " (" + getLetterGrade(lowest) + ") - " + bottomStudent);
+        System.out.println("Students Passed: " + passCount);
+        System.out.println("Students Failed: " + failCount);
+        System.out.printf("Pass Rate: %.1f%%%n", (passCount * 100.0 / studentGrades.size()));
+        
+        // Grade distribution
+        System.out.println("\n=== GRADE DISTRIBUTION ===");
+        int[] gradeCount = new int[5]; // A, B, C, D, F
+        
+        for (double grade : studentGrades.values()) {
+            if (grade >= 90) gradeCount[0]++;
+            else if (grade >= 80) gradeCount[1]++;
+            else if (grade >= 70) gradeCount[2]++;
+            else if (grade >= 60) gradeCount[3]++;
+            else gradeCount[4]++;
+        }
+        
+        System.out.println("A (90-100): " + gradeCount[0]);
+        System.out.println("B (80-89):  " + gradeCount[1]);
+        System.out.println("C (70-79):  " + gradeCount[2]);
+        System.out.println("D (60-69):  " + gradeCount[3]);
+        System.out.println("F (0-59):   " + gradeCount[4]);
+    }
+    
+    private void sortStudentsByGrade() {
+        if (studentGrades.isEmpty()) {
+            System.out.println("No students found!");
+            return;
+        }
+        
+        System.out.println("Sort by:");
+        System.out.println("1. Highest to Lowest");
+        System.out.println("2. Lowest to Highest");
+        System.out.print("Enter choice: ");
+        
+        int choice = getChoice();
+        
+        // Convert HashMap to ArrayList for sorting
+        ArrayList<Map.Entry<String, Double>> sortedList = 
+            new ArrayList<>(studentGrades.entrySet());
+        
+        if (choice == 1) {
+            // Sort by grade descending
+            sortedList.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+            System.out.println("\n=== STUDENTS SORTED (HIGHEST TO LOWEST) ===");
+        } else if (choice == 2) {
+            // Sort by grade ascending
+            sortedList.sort((a, b) -> Double.compare(a.getValue(), b.getValue()));
+            System.out.println("\n=== STUDENTS SORTED (LOWEST TO HIGHEST) ===");
+        } else {
+            System.out.println("Invalid choice!");
+            return;
+        }
+        
+        System.out.println("Rank  Student Name         Grade");
+        System.out.println("----------------------------------------");
+        
+        int rank = 1;
+        for (Map.Entry<String, Double> entry : sortedList) {
+            // Simple string formatting instead of complex printf
+            String rankStr = String.valueOf(rank);
+            String nameStr = entry.getKey();
+            // Simple way to show grade with 2 decimal places
+            double grade = entry.getValue();
+            String gradeStr = Math.round(grade * 100.0) / 100.0 + " (" + getLetterGrade(grade) + ")";
+            
+            System.out.println(rankStr + ".    " + nameStr + " - " + gradeStr);
+            rank++;
+        }
+    }
+    
+    private void removeStudent() {
+        if (studentGrades.isEmpty()) {
+            System.out.println("No students found!");
+            return;
+        }
+        
+        scanner.nextLine(); // Clear buffer
+        System.out.print("Enter student name to remove: ");
+        String name = scanner.nextLine().trim();
+        
+        if (studentGrades.containsKey(name)) {
+            double grade = studentGrades.remove(name);
+            System.out.println("Student '" + name + "' (Grade: " + grade + ") removed successfully!");
+        } else {
+            System.out.println("Student not found!");
+        }
+    }
+    
+    private void saveToFile() {
+        if (studentGrades.isEmpty()) {
+            System.out.println("No data to save!");
+            return;
+        }
+        
+        try {
+            FileWriter writer = new FileWriter("student_grades.txt");
+            writer.write("Student Name,Grade\n");
+            
+            for (Map.Entry<String, Double> entry : studentGrades.entrySet()) {
+                writer.write(entry.getKey() + "," + entry.getValue() + "\n");
+            }
+            
+            writer.close();
+            System.out.println("Data saved successfully to 'student_grades.txt'!");
+        } catch (IOException e) {
+            System.out.println("Error saving file: " + e.getMessage());
+        }
+    }
+    
+    private void loadFromFile() {
+        try {
+            File file = new File("student_grades.txt");
+            if (!file.exists()) {
+                System.out.println("No saved file found!");
+                return;
+            }
+            
+            Scanner fileScanner = new Scanner(file);
+            studentGrades.clear();
+            
+            // Skip header line
+            if (fileScanner.hasNextLine()) {
+                fileScanner.nextLine();
+            }
+            
+            int loadedCount = 0;
+            while (fileScanner.hasNextLine()) {
+                String line = fileScanner.nextLine().trim();
+                if (!line.isEmpty()) {
+                    String[] parts = line.split(",");
+                    if (parts.length == 2) {
+                        try {
+                            String name = parts[0].trim();
+                            double grade = Double.parseDouble(parts[1].trim());
+                            studentGrades.put(name, grade);
+                            loadedCount++;
+                        } catch (NumberFormatException e) {
+                            System.out.println("Skipping invalid line: " + line);
+                        }
+                    }
+                }
+            }
+            
+            fileScanner.close();
+            System.out.println("Successfully loaded " + loadedCount + " student records!");
+        } catch (IOException e) {
+            System.out.println("Error loading file: " + e.getMessage());
+        }
+    }
+    
+    private String getLetterGrade(double grade) {
+        if (grade >= 90) return "A";
+        else if (grade >= 80) return "B";
+        else if (grade >= 70) return "C";
+        else if (grade >= 60) return "D";
+        else return "F";
+    }
+}
